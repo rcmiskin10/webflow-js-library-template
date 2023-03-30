@@ -142,13 +142,13 @@
       this[globalName] = mainExports;
     }
   }
-})({"e8zsm":[function(require,module,exports) {
+})({"fJDnv":[function(require,module,exports) {
 var global = arguments[3];
 var HMR_HOST = null;
 var HMR_PORT = 50619;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d6ea1d42532a7575";
-module.bundle.HMR_BUNDLE_ID = "138b6a135baa4167";
+module.bundle.HMR_BUNDLE_ID = "301dd335171f3531";
 "use strict";
 /* global HMR_HOST, HMR_PORT, HMR_ENV_HASH, HMR_SECURE, chrome, browser, globalThis, __parcel__import__, __parcel__importScripts__, ServiceWorkerGlobalScope */ /*::
 import type {
@@ -556,9 +556,260 @@ function hmrAccept(bundle, id) {
     });
 }
 
-},{}],"igcvL":[function(require,module,exports) {
-alert("Hello World");
+},{}],"btgcM":[function(require,module,exports) {
+var _functions = require("./functions");
+const parceled = true;
+window.Webflow ||= [];
+window.Webflow.push(async ()=>{
+    // all cart items are stored in local storage,
+    // so get stored items and place in cart div.
+    (0, _functions.setUpCartFromLocalStorage)();
+    // add click event handler for nav cart open link.
+    (0, _functions.addClickEventListenerToNavCartOpen)();
+    // add click event handler for nav cart close link.
+    (0, _functions.addClickEventListenerToNavCartClose)();
+    // add event handlers for each add to quote button the page.
+    (0, _functions.addClickEventListenersToAddToQuoteButtons)();
+    (0, _functions.onRequestFormSubmit)();
+});
 
-},{}]},["e8zsm","igcvL"], "igcvL", "parcelRequire675e")
+},{"./functions":"gTwP2"}],"gTwP2":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "clearCartList", ()=>clearCartList);
+parcelHelpers.export(exports, "resetCart", ()=>resetCart);
+parcelHelpers.export(exports, "onRequestFormSubmit", ()=>onRequestFormSubmit);
+parcelHelpers.export(exports, "addClickEventListenersToRemoveLinks", ()=>addClickEventListenersToRemoveLinks);
+parcelHelpers.export(exports, "toggleCartFooter", ()=>toggleCartFooter);
+parcelHelpers.export(exports, "toggleCartEmptyListState", ()=>toggleCartEmptyListState);
+parcelHelpers.export(exports, "addClickEventListenersToAddToQuoteButtons", ()=>addClickEventListenersToAddToQuoteButtons);
+parcelHelpers.export(exports, "addClickEventListenersToCartItemQuantityInputs", ()=>addClickEventListenersToCartItemQuantityInputs);
+parcelHelpers.export(exports, "setCartItemsQuantity", ()=>setCartItemsQuantity);
+parcelHelpers.export(exports, "setUpCartFromLocalStorage", ()=>setUpCartFromLocalStorage);
+parcelHelpers.export(exports, "openCart", ()=>openCart);
+parcelHelpers.export(exports, "closeCart", ()=>closeCart);
+parcelHelpers.export(exports, "addClickEventListenerToNavCartOpen", ()=>addClickEventListenerToNavCartOpen);
+parcelHelpers.export(exports, "addClickEventListenerToNavCartClose", ()=>addClickEventListenerToNavCartClose);
+function clearCartList() {
+    const cartList = Array.from(document.getElementsByClassName("cart-list"))[0];
+    cartList.replaceChildren();
+}
+function resetCart() {
+    clearCartList();
+    localStorage.clear();
+}
+function onRequestFormSubmit() {
+    const button = Array.from(document.getElementsByClassName("request-quote-button-form-button"))[0];
+    button.addEventListener("click", function handleClick(event) {
+        const target = event.target;
+        if (target) resetCart();
+    });
+}
+function addClickEventListenersToRemoveLinks() {
+    const removeItemLinks = Array.from(document.getElementsByClassName("cart-item-information-remove-link"));
+    removeItemLinks.forEach((link)=>{
+        link.addEventListener("click", async (event)=>{
+            const target = event.target;
+            if (target) {
+                const quoteItems = await JSON.parse(localStorage?.getItem("quoteItems") || "{}");
+                if (target.dataset.slug) {
+                    delete quoteItems[target.dataset.slug];
+                    localStorage.setItem("quoteItems", JSON.stringify(quoteItems));
+                    const form = document.getElementById("wf-form-Request-Quote");
+                    const hiddenInput = document.getElementById(target.dataset.slug);
+                    form.removeChild(hiddenInput);
+                }
+                target.parentElement?.parentElement?.remove();
+                toggleCartFooter(quoteItems);
+                toggleCartEmptyListState(quoteItems);
+                setCartItemsQuantity();
+            }
+        });
+    });
+}
+function toggleCartFooter(quoteItems) {
+    const cartFooter = Array.from(document.getElementsByClassName("cart-footer"))[0];
+    if (Object.keys(quoteItems).length > 0) {
+        cartFooter.style.display = "block";
+        onRequestFormSubmit();
+    } else cartFooter.style.display = "none";
+}
+function toggleCartEmptyListState(quoteItems) {
+    const cartFooter = Array.from(document.getElementsByClassName("cart-empty"))[0];
+    if (Object.keys(quoteItems).length > 0) {
+        cartFooter.style.display = "none";
+        onRequestFormSubmit();
+    } else cartFooter.style.display = "block";
+}
+function addQuoteItemsToHiddenInput(item) {
+    const hiddenInput = document.createElement("input");
+    document.getElementById("wf-form-Request-Quote")?.appendChild(hiddenInput);
+    hiddenInput.name = "Item: " + item["slug"];
+    hiddenInput.id = item["slug"];
+    hiddenInput.type = "hidden";
+    hiddenInput.value = " Quantity: " + item["quantity"];
+    hiddenInput.className = "quote-item";
+    document.getElementById("wf-form-Request-Quote")?.appendChild(hiddenInput);
+}
+function addClickEventListenersToAddToQuoteButtons() {
+    const addToQuoteButtons = Array.from(document.getElementsByClassName("add-to-quote-button"));
+    addToQuoteButtons.forEach((btn)=>{
+        btn.addEventListener("click", async function handleClick(event) {
+            const target = event.target;
+            if (target) {
+                const { slug  } = target.dataset;
+                const productQuantityInput = document.getElementById("product-quantity-" + slug);
+                const productQuantity = productQuantityInput.value;
+                if (productQuantity === "" || productQuantity == null) {
+                    productQuantityInput.setCustomValidity("Please enter a number!");
+                    productQuantityInput.reportValidity();
+                    return;
+                }
+                const quoteItems = await JSON.parse(localStorage?.getItem("quoteItems") || "{}");
+                if (slug) {
+                    target.dataset.quantity = productQuantity;
+                    quoteItems[slug] = target.dataset;
+                }
+                localStorage.setItem("quoteItems", JSON.stringify(quoteItems));
+                setUpCartFromLocalStorage();
+                openCart();
+            }
+        });
+    });
+}
+function addClickEventListenersToCartItemQuantityInputs() {
+    const cartQuantityInputs = Array.from(document.getElementsByClassName("cart-quantity"));
+    cartQuantityInputs.forEach((cartQuantityInput)=>{
+        cartQuantityInput.addEventListener("input", async (event)=>{
+            const target = event.target;
+            if (target) {
+                const quoteItems = await JSON.parse(localStorage?.getItem("quoteItems") || "{}");
+                if (target.dataset.slug) {
+                    const originalQuantity = quoteItems[target.dataset.slug]["quantity"];
+                    quoteItems[target.dataset.slug]["quantity"] = target.value == "" || target.value == null ? originalQuantity : target.value;
+                    localStorage.setItem("quoteItems", JSON.stringify(quoteItems));
+                    addQuoteItemsToHiddenInput(quoteItems[target.dataset.slug]);
+                }
+                toggleCartFooter(quoteItems);
+                toggleCartEmptyListState(quoteItems);
+                setCartItemsQuantity();
+            }
+        });
+    });
+}
+async function setCartItemsQuantity() {
+    const quoteItems = await JSON.parse(localStorage?.getItem("quoteItems") || "{}");
+    const cartItemsQuantity = document.getElementById("cart-quantity");
+    if (cartItemsQuantity) cartItemsQuantity.innerHTML = Object.keys(quoteItems).length.toString();
+}
+async function setUpCartFromLocalStorage() {
+    clearCartList();
+    // load add to cart if local storage not empty
+    const quoteItems = await JSON.parse(localStorage?.getItem("quoteItems") || "{}");
+    Object.keys(quoteItems).forEach(function(key) {
+        const removeLink = document.createElement("a");
+        removeLink.href = "#";
+        removeLink.classList.add("cart-item-information-remove-link");
+        removeLink.innerText = "Remove";
+        removeLink.dataset.slug = quoteItems[key]["slug"];
+        const cartItemDiv = document.createElement("div");
+        cartItemDiv.classList.add("cart-item");
+        const cartItem = `
+            <div class="cart-item-image-wrapper">
+              <img 
+                src="${quoteItems[key]["image"]}" 
+                loading="lazy" 
+                sizes="(max-width: 991px) 
+                100vw, 60px" 
+                srcset="${quoteItems[key]["image"]} 500w, ${quoteItems[key]["image"]} 540w" 
+                alt="" 
+                class="cart-item-image"
+              >
+            </div>
+            <div class="cart-item-information">
+              <div class="cart-item-information-heading">${quoteItems[key]["name"]}</div>
+              <div class="cart-item-information-subheading">${quoteItems[key]["description"]}</div>
+              ${removeLink.outerHTML}
+            </div>
+            <div class="w-embed">
+              <input 
+                type="number" 
+                class="w-commerce-commercecartquantity input cart-quantity" 
+                min="1" 
+                max="100000000"
+                required 
+                oninput="validity.valid||(value='');"
+                name="quantity" 
+                autocomplete="off" 
+                value="${quoteItems[key]["quantity"]}"
+                data-slug="${quoteItems[key]["slug"]}"
+                onfocusout="if(this.value===''){this.value='${quoteItems[key]["quantity"]}'};"
+              >
+            </div>
+          `;
+        cartItemDiv.innerHTML = cartItem;
+        const cartList = Array.from(document.getElementsByClassName("cart-list"))[0];
+        cartList.appendChild(cartItemDiv);
+        addQuoteItemsToHiddenInput(quoteItems[key]);
+    });
+    addClickEventListenersToRemoveLinks();
+    addClickEventListenersToCartItemQuantityInputs();
+    toggleCartFooter(quoteItems);
+    toggleCartEmptyListState(quoteItems);
+    setCartItemsQuantity();
+}
+function openCart() {
+    const cart = Array.from(document.getElementsByClassName("cart"))[0];
+    cart.style.display = "block";
+}
+function closeCart() {
+    const cart = Array.from(document.getElementsByClassName("cart"))[0];
+    cart.style.display = "none";
+}
+function addClickEventListenerToNavCartOpen() {
+    const cartLink = Array.from(document.getElementsByClassName("nav-cart"))[0];
+    cartLink.addEventListener("click", function handleClick() {
+        setUpCartFromLocalStorage();
+        openCart();
+    });
+}
+function addClickEventListenerToNavCartClose() {
+    const closeButton = Array.from(document.getElementsByClassName("close-button"))[0];
+    closeButton.addEventListener("click", function handleClick() {
+        closeCart();
+    });
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"9E1L9"}],"9E1L9":[function(require,module,exports) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, "__esModule", {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
+
+},{}]},["fJDnv","btgcM"], "btgcM", "parcelRequire94c2")
 
 //# sourceMappingURL=app.js.map
