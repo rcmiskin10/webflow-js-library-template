@@ -1,0 +1,24 @@
+{
+  "name": "webflow-js-library-template",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "parcel app.js --hmr-port 50619",
+    "test": "echo \"Error: no test specified\" && exit 1"
+    
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rcmiskin10/webflow-js-library-template.git"
+  },
+  "author": "Ricky Miskin",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rcmiskin10/webflow-js-library-template/issues"
+  },
+  "homepage": "https://github.com/rcmiskin10/webflow-js-library-template#readme",
+  "dependencies": {
+    "parcel": "^2.8.3"
+  }
+}

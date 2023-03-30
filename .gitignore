@@ -1,0 +1,11 @@
+# Dependency directories
+node_modules/
+# misc
+.parcel-cache/**
+.parcel-cache/data.mdb
+
+# dotenv environment variables file
+.env
+
+# Production files
+dist
