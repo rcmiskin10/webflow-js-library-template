@@ -597,6 +597,7 @@ function clearCartList() {
 function resetCart() {
     clearCartList();
     localStorage.clear();
+    toggleCartEmptyListState();
 }
 function onRequestFormSubmit() {
     const button = Array.from(document.getElementsByClassName("request-quote-button-form-button"))[0];
@@ -621,7 +622,7 @@ function addClickEventListenersToRemoveLinks() {
                 }
                 target.parentElement?.parentElement?.remove();
                 toggleCartFooter(quoteItems);
-                toggleCartEmptyListState(quoteItems);
+                toggleCartEmptyListState();
                 setCartItemsQuantity();
             }
         });
@@ -634,12 +635,11 @@ function toggleCartFooter(quoteItems) {
         onRequestFormSubmit();
     } else cartFooter.style.display = "none";
 }
-function toggleCartEmptyListState(quoteItems) {
-    const cartFooter = Array.from(document.getElementsByClassName("cart-empty"))[0];
-    if (Object.keys(quoteItems).length > 0) {
-        cartFooter.style.display = "none";
-        onRequestFormSubmit();
-    } else cartFooter.style.display = "block";
+function toggleCartEmptyListState() {
+    const quoteItems = JSON.parse(localStorage?.getItem("quoteItems") || "{}");
+    const cartListEmpty = Array.from(document.getElementsByClassName("cart-list-empty"))[0];
+    if (Object.keys(quoteItems).length > 0) cartListEmpty.style.display = "none";
+    else cartListEmpty.style.display = "block";
 }
 function addQuoteItemsToHiddenInput(item) {
     const hiddenInput = document.createElement("input");
@@ -660,15 +660,17 @@ function addClickEventListenersToAddToQuoteButtons() {
                 const { slug  } = target.dataset;
                 const productQuantityInput = document.getElementById("product-quantity-" + slug);
                 const productQuantity = productQuantityInput.value;
-                if (productQuantity === "" || productQuantity == null) {
+                if (productQuantity == "" || productQuantity == null) {
                     productQuantityInput.setCustomValidity("Please enter a number!");
                     productQuantityInput.reportValidity();
+                    productQuantityInput.setCustomValidity("");
                     return;
                 }
                 const quoteItems = await JSON.parse(localStorage?.getItem("quoteItems") || "{}");
                 if (slug) {
                     target.dataset.quantity = productQuantity;
                     quoteItems[slug] = target.dataset;
+                    productQuantityInput.value = "";
                 }
                 localStorage.setItem("quoteItems", JSON.stringify(quoteItems));
                 setUpCartFromLocalStorage();
@@ -680,18 +682,29 @@ function addClickEventListenersToAddToQuoteButtons() {
 function addClickEventListenersToCartItemQuantityInputs() {
     const cartQuantityInputs = Array.from(document.getElementsByClassName("cart-quantity"));
     cartQuantityInputs.forEach((cartQuantityInput)=>{
+        const originalCartQuantityInput = cartQuantityInput;
+        const originalCartQuantityInputValue = originalCartQuantityInput.value;
         cartQuantityInput.addEventListener("input", async (event)=>{
             const target = event.target;
             if (target) {
                 const quoteItems = await JSON.parse(localStorage?.getItem("quoteItems") || "{}");
                 if (target.dataset.slug) {
-                    const originalQuantity = quoteItems[target.dataset.slug]["quantity"];
-                    quoteItems[target.dataset.slug]["quantity"] = target.value == "" || target.value == null ? originalQuantity : target.value;
-                    localStorage.setItem("quoteItems", JSON.stringify(quoteItems));
-                    addQuoteItemsToHiddenInput(quoteItems[target.dataset.slug]);
+                    if (target.value == "" || target.value == null) {
+                        target.setCustomValidity("Please enter a number!");
+                        target.reportValidity();
+                        target.setCustomValidity("");
+                        quoteItems[target.dataset.slug]["quantity"] = originalCartQuantityInputValue;
+                        localStorage.setItem("quoteItems", JSON.stringify(quoteItems));
+                        addQuoteItemsToHiddenInput(quoteItems[target.dataset.slug]);
+                        return;
+                    } else {
+                        quoteItems[target.dataset.slug]["quantity"] = target.value;
+                        localStorage.setItem("quoteItems", JSON.stringify(quoteItems));
+                        addQuoteItemsToHiddenInput(quoteItems[target.dataset.slug]);
+                    }
                 }
                 toggleCartFooter(quoteItems);
-                toggleCartEmptyListState(quoteItems);
+                toggleCartEmptyListState();
                 setCartItemsQuantity();
             }
         });
@@ -715,38 +728,37 @@ async function setUpCartFromLocalStorage() {
         const cartItemDiv = document.createElement("div");
         cartItemDiv.classList.add("cart-item");
         const cartItem = `
-            <div class="cart-item-image-wrapper">
-              <img 
-                src="${quoteItems[key]["image"]}" 
-                loading="lazy" 
-                sizes="(max-width: 991px) 
-                100vw, 60px" 
-                srcset="${quoteItems[key]["image"]} 500w, ${quoteItems[key]["image"]} 540w" 
-                alt="" 
-                class="cart-item-image"
-              >
-            </div>
-            <div class="cart-item-information">
-              <div class="cart-item-information-heading">${quoteItems[key]["name"]}</div>
-              <div class="cart-item-information-subheading">${quoteItems[key]["description"]}</div>
-              ${removeLink.outerHTML}
-            </div>
-            <div class="w-embed">
-              <input 
-                type="number" 
-                class="w-commerce-commercecartquantity input cart-quantity" 
-                min="1" 
-                max="100000000"
-                required 
-                oninput="validity.valid||(value='');"
-                name="quantity" 
-                autocomplete="off" 
-                value="${quoteItems[key]["quantity"]}"
-                data-slug="${quoteItems[key]["slug"]}"
-                onfocusout="if(this.value===''){this.value='${quoteItems[key]["quantity"]}'};"
-              >
-            </div>
-          `;
+              <div class="cart-item-image-wrapper">
+                <img 
+                  src="${quoteItems[key]["image"]}" 
+                  loading="lazy" 
+                  sizes="(max-width: 991px) 
+                  100vw, 60px" 
+                  srcset="${quoteItems[key]["image"]} 500w, ${quoteItems[key]["image"]} 540w" 
+                  alt="" 
+                  class="cart-item-image"
+                >
+              </div>
+              <div class="cart-item-information">
+                <div class="cart-item-information-heading">${quoteItems[key]["name"]}</div>
+                <div class="cart-item-information-subheading">${quoteItems[key]["description"]}</div>
+                ${removeLink.outerHTML}
+              </div>
+              <div class="w-embed">
+                <input 
+                  type="number" 
+                  class="w-commerce-commercecartquantity input cart-quantity" 
+                  min="1" 
+                  max="100000000"
+                  required 
+                  oninput="validity.valid||(value='');"
+                  name="quantity" 
+                  autocomplete="off" 
+                  value="${quoteItems[key]["quantity"]}"
+                  data-slug="${quoteItems[key]["slug"]}"
+                >
+              </div>
+            `;
         cartItemDiv.innerHTML = cartItem;
         const cartList = Array.from(document.getElementsByClassName("cart-list"))[0];
         cartList.appendChild(cartItemDiv);
@@ -755,7 +767,7 @@ async function setUpCartFromLocalStorage() {
     addClickEventListenersToRemoveLinks();
     addClickEventListenersToCartItemQuantityInputs();
     toggleCartFooter(quoteItems);
-    toggleCartEmptyListState(quoteItems);
+    toggleCartEmptyListState();
     setCartItemsQuantity();
 }
 function openCart() {
