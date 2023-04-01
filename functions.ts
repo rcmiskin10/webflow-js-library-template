@@ -6,6 +6,7 @@ export function clearCartList() {
 export function resetCart() {
   clearCartList();
   localStorage.clear();
+  toggleCartEmptyListState();
 }
 
 export function onRequestFormSubmit() {
@@ -47,7 +48,7 @@ export function addClickEventListenersToRemoveLinks() {
 
         target.parentElement?.parentElement?.remove();
         toggleCartFooter(quoteItems);
-        toggleCartEmptyListState(quoteItems);
+        toggleCartEmptyListState();
         setCartItemsQuantity();
       }
     });
@@ -66,15 +67,16 @@ export function toggleCartFooter(quoteItems: Object) {
   }
 }
 
-export function toggleCartEmptyListState(quoteItems: Object) {
-  const cartFooter = Array.from(
-    document.getElementsByClassName("cart-empty")
+export function toggleCartEmptyListState() {
+  const quoteItems = JSON.parse(localStorage?.getItem("quoteItems") || "{}");
+
+  const cartListEmpty = Array.from(
+    document.getElementsByClassName("cart-list-empty")
   )[0] as HTMLElement;
   if (Object.keys(quoteItems).length > 0) {
-    cartFooter.style.display = "none";
-    onRequestFormSubmit();
+    cartListEmpty.style.display = "none";
   } else {
-    cartFooter.style.display = "block";
+    cartListEmpty.style.display = "block";
   }
 }
 
@@ -102,9 +104,10 @@ export function addClickEventListenersToAddToQuoteButtons() {
           "product-quantity-" + slug
         ) as HTMLInputElement;
         const productQuantity = productQuantityInput.value;
-        if (productQuantity === "" || productQuantity == null) {
+        if (productQuantity == "" || productQuantity == null) {
           productQuantityInput.setCustomValidity("Please enter a number!");
           productQuantityInput.reportValidity();
+          productQuantityInput.setCustomValidity("");
           return;
         }
 
@@ -114,6 +117,7 @@ export function addClickEventListenersToAddToQuoteButtons() {
         if (slug) {
           target.dataset.quantity = productQuantity;
           quoteItems[slug] = target.dataset;
+          productQuantityInput.value = "";
         }
 
         localStorage.setItem("quoteItems", JSON.stringify(quoteItems));
@@ -130,6 +134,9 @@ export function addClickEventListenersToCartItemQuantityInputs() {
   );
 
   cartQuantityInputs.forEach((cartQuantityInput) => {
+    const originalCartQuantityInput = cartQuantityInput as HTMLInputElement;
+    const originalCartQuantityInputValue = originalCartQuantityInput.value;
+
     cartQuantityInput.addEventListener("input", async (event: Event) => {
       const target = event.target as HTMLInputElement;
       if (target) {
@@ -138,16 +145,23 @@ export function addClickEventListenersToCartItemQuantityInputs() {
         );
 
         if (target.dataset.slug) {
-          const originalQuantity = quoteItems[target.dataset.slug]["quantity"];
-          quoteItems[target.dataset.slug]["quantity"] =
-            target.value == "" || target.value == null
-              ? originalQuantity
-              : target.value;
-          localStorage.setItem("quoteItems", JSON.stringify(quoteItems));
-          addQuoteItemsToHiddenInput(quoteItems[target.dataset.slug]);
+          if (target.value == "" || target.value == null) {
+            target.setCustomValidity("Please enter a number!");
+            target.reportValidity();
+            target.setCustomValidity("");
+            quoteItems[target.dataset.slug]["quantity"] =
+              originalCartQuantityInputValue;
+            localStorage.setItem("quoteItems", JSON.stringify(quoteItems));
+            addQuoteItemsToHiddenInput(quoteItems[target.dataset.slug]);
+            return;
+          } else {
+            quoteItems[target.dataset.slug]["quantity"] = target.value;
+            localStorage.setItem("quoteItems", JSON.stringify(quoteItems));
+            addQuoteItemsToHiddenInput(quoteItems[target.dataset.slug]);
+          }
         }
         toggleCartFooter(quoteItems);
-        toggleCartEmptyListState(quoteItems);
+        toggleCartEmptyListState();
         setCartItemsQuantity();
       }
     });
@@ -181,38 +195,37 @@ export async function setUpCartFromLocalStorage() {
     cartItemDiv.classList.add("cart-item");
 
     const cartItem = `
-            <div class="cart-item-image-wrapper">
-              <img 
-                src="${quoteItems[key]["image"]}" 
-                loading="lazy" 
-                sizes="(max-width: 991px) 
-                100vw, 60px" 
-                srcset="${quoteItems[key]["image"]} 500w, ${quoteItems[key]["image"]} 540w" 
-                alt="" 
-                class="cart-item-image"
-              >
-            </div>
-            <div class="cart-item-information">
-              <div class="cart-item-information-heading">${quoteItems[key]["name"]}</div>
-              <div class="cart-item-information-subheading">${quoteItems[key]["description"]}</div>
-              ${removeLink.outerHTML}
-            </div>
-            <div class="w-embed">
-              <input 
-                type="number" 
-                class="w-commerce-commercecartquantity input cart-quantity" 
-                min="1" 
-                max="100000000"
-                required 
-                oninput="validity.valid||(value='');"
-                name="quantity" 
-                autocomplete="off" 
-                value="${quoteItems[key]["quantity"]}"
-                data-slug="${quoteItems[key]["slug"]}"
-                onfocusout="if(this.value===''){this.value='${quoteItems[key]["quantity"]}'};"
-              >
-            </div>
-          `;
+              <div class="cart-item-image-wrapper">
+                <img 
+                  src="${quoteItems[key]["image"]}" 
+                  loading="lazy" 
+                  sizes="(max-width: 991px) 
+                  100vw, 60px" 
+                  srcset="${quoteItems[key]["image"]} 500w, ${quoteItems[key]["image"]} 540w" 
+                  alt="" 
+                  class="cart-item-image"
+                >
+              </div>
+              <div class="cart-item-information">
+                <div class="cart-item-information-heading">${quoteItems[key]["name"]}</div>
+                <div class="cart-item-information-subheading">${quoteItems[key]["description"]}</div>
+                ${removeLink.outerHTML}
+              </div>
+              <div class="w-embed">
+                <input 
+                  type="number" 
+                  class="w-commerce-commercecartquantity input cart-quantity" 
+                  min="1" 
+                  max="100000000"
+                  required 
+                  oninput="validity.valid||(value='');"
+                  name="quantity" 
+                  autocomplete="off" 
+                  value="${quoteItems[key]["quantity"]}"
+                  data-slug="${quoteItems[key]["slug"]}"
+                >
+              </div>
+            `;
 
     cartItemDiv.innerHTML = cartItem;
     const cartList = Array.from(
@@ -225,7 +238,7 @@ export async function setUpCartFromLocalStorage() {
   addClickEventListenersToRemoveLinks();
   addClickEventListenersToCartItemQuantityInputs();
   toggleCartFooter(quoteItems);
-  toggleCartEmptyListState(quoteItems);
+  toggleCartEmptyListState();
   setCartItemsQuantity();
 }
 
